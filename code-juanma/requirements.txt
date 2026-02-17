@@ -1,0 +1,6 @@
+gradio
+langchain_openai
+langchain_huggingface
+langchain_chroma
+langchain_community
+sentence_transformers
