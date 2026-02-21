@@ -1,43 +1,43 @@
 ## Storages open source
 
-**MinIO**
-About: MinIO is a high-performance, S3 compatible object store, open sourced under GNU AGPLv3 license.
+**MinIO**\
+About: MinIO is a high-performance, S3 compatible object store, open sourced under GNU AGPLv3 license.\
 [GitHub link](https://github.com/minio/minio) ⭐ 60.3k
 
-**SeaweedFS**
-About: SeaweedFS is a fast distributed storage system for blobs, objects, files, and data lake, for billions of files! Blob store has O(1) disk seek, cloud tiering. Filer supports Cloud Drive, xDC replication, Kubernetes, POSIX FUSE mount, S3 API, S3 Gateway, Hadoop, WebDAV, encryption, Erasure Coding. Enterprise version is at seaweedfs.com.
+**SeaweedFS**\
+About: SeaweedFS is a fast distributed storage system for blobs, objects, files, and data lake, for billions of files! Blob store has O(1) disk seek, cloud tiering. Filer supports Cloud Drive, xDC replication, Kubernetes, POSIX FUSE mount, S3 API, S3 Gateway, Hadoop, WebDAV, encryption, Erasure Coding. Enterprise version is at seaweedfs.com.\
 [GitHub link](https://github.com/seaweedfs/seaweedfs) ⭐ 30.4k
 
-**RustFS**
-About: 🚀2.3x faster than MinIO for 4KB object payloads. RustFS is an open-source, S3-compatible high-performance object storage system supporting migration and coexistence with other S3-compatible platforms such as MinIO and Ceph.
+**RustFS**\
+About: 🚀2.3x faster than MinIO for 4KB object payloads. RustFS is an open-source, S3-compatible high-performance object storage system supporting migration and coexistence with other S3-compatible platforms such as MinIO and Ceph.\
 [GitHub link](https://github.com/rustfs/rustfs) ⭐ 22.1k
 
-**CloudServer**
-About: Zenko CloudServer, an open-source Node.js implementation of the Amazon S3 protocol on the front-end and backend storage capabilities to multiple clouds, including Azure and Google.
+**CloudServer**\
+About: Zenko CloudServer, an open-source Node.js implementation of the Amazon S3 protocol on the front-end and backend storage capabilities to multiple clouds, including Azure and Google.\
 [GitHub link](https://github.com/scality/cloudserver) ⭐ 1.9k
 
 ---
 
-# Bases de datos vectoriales
+## Bases de datos vectoriales
 
-**Milvus**
-About: Milvus is a high-performance, cloud-native vector database built for scalable vector ANN search.
+**Milvus**\
+About: Milvus is a high-performance, cloud-native vector database built for scalable vector ANN search.\
 [GitHub link](https://github.com/milvus-io/milvus) ⭐ 42.9k
 
-**Faiss**
-About: A library for efficient similarity search and clustering of dense vectors.
+**Faiss**\
+About: A library for efficient similarity search and clustering of dense vectors.\
 [GitHub link](https://github.com/facebookresearch/faiss) ⭐ 39.1k
 
-**Qdrant**
-About: Qdrant - High-performance, massive-scale Vector Database and Vector Search Engine for the next generation of AI. Also available in the cloud.
+**Qdrant**\
+About: Qdrant - High-performance, massive-scale Vector Database and Vector Search Engine for the next generation of AI. Also available in the cloud.\
 [GitHub link](https://github.com/qdrant/qdrant) ⭐ 29k
 
-**Chroma**
-About: Open-source search and retrieval database for AI applications.
+**Chroma**\
+About: Open-source search and retrieval database for AI applications.\
 [GitHub link](https://github.com/chroma-core/chroma) ⭐ 26.2k
 
-**Pgvector**
-About: Open-source vector similarity search for Postgres.
+**Pgvector**\
+About: Open-source vector similarity search for Postgres.\
 [GitHub link](https://github.com/chroma-core/chroma) ⭐ 19.9k
 
 En este paper de la [Universidad de Cambridge](https://doi.org/10.1017/nlp.2024.53), dicen que ChromaDB es mejor que FAISS y Pinecone en términos generales de eficiencia y rendimiento.
@@ -47,20 +47,20 @@ En general, parece que Qdrant es más escalable y hecho para RAGs en producción
 ---
 
 ## Parsing y limpieza
-**Docling**
-Desarrollada por IBM y es capaz de trabajar con PDF, DOCX, PPTX, XLSX, HTML, WAV, MP3, WebVTT imágenes (PNG, TIFF, JPEG, ...), LaTeX y mucho más.
+**Docling**\
+Desarrollada por IBM y es capaz de trabajar con PDF, DOCX, PPTX, XLSX, HTML, WAV, MP3, WebVTT imágenes (PNG, TIFF, JPEG, ...), LaTeX y mucho más.\
 [GitHub link](https://github.com/docling-project/docling) ⭐ 53.8k
 
-**Marker**
-Es una herramienta altamente eficiente diseñada específicamente para convertir PDFs e imágenes a Markdown, JSON o HTML con gran precisión.
+**Marker**\
+Es una herramienta altamente eficiente diseñada específicamente para convertir PDFs e imágenes a Markdown, JSON o HTML con gran precisión.\
 [GitHub link](https://github.com/datalab-to/marker) ⭐ 31.8k
 
-**Unstructured**
-Ofrece funciones directas (como partition_pdf()) que no solo devuelven texto, sino una lista de elementos (títulos, listas, texto narrativo) con metadatos como el número de página.
+**Unstructured**\
+Ofrece funciones directas (como partition_pdf()) que no solo devuelven texto, sino una lista de elementos (títulos, listas, texto narrativo) con metadatos como el número de página.\
 [GitHub link](https://github.com/Unstructured-IO/unstructured) ⭐ 14k
 
-**Nougat**
-Desarrollada por Meta. Es útil si necesitáramos extraer datos de papers, transforma esos papers a código markdown bastante bien.
+**Nougat**\
+Desarrollada por Meta. Es útil si necesitáramos extraer datos de papers, transforma esos papers a código markdown bastante bien.\
 [GitHub link](https://github.com/facebookresearch/nougat) ⭐ 9.8k
 
 ---
