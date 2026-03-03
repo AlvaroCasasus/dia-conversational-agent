@@ -1,0 +1,11 @@
+# Backend dependencies for the RAG service.
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic-settings
+httpx
+# Uncomment as services are implemented:
+# chromadb
+# minio
+# langchain
+# openai

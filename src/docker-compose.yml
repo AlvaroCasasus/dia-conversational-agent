@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  # ── Frontend ──────────────────────────────────────────────
+  # Gradio web UI for uploading documents and querying the RAG system.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+
+  # ── Backend ───────────────────────────────────────────────
+  # FastAPI application that orchestrates the RAG pipeline:
+  # receives queries, retrieves relevant chunks from Chroma,
+  # and generates answers via an LLM.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - chroma
+      - minio
+      - docling
+
+  # ── MinIO ─────────────────────────────────────────────────
+  # S3-compatible object storage used to persist raw uploaded
+  # documents before and after processing.
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  # ── Docling ───────────────────────────────────────────────
+  # Document parsing and conversion service. Extracts text and
+  # structure from PDFs, DOCX, and other file formats so they
+  # can be chunked and embedded.
+  docling:
+    image: ds4sd/docling-serve:latest
+    ports:
+      - "5001:5001"
+
+  # ── Chroma ────────────────────────────────────────────────
+  # Vector database that stores document chunk embeddings and
+  # supports similarity search for the retrieval step.
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+volumes:
+  minio_data:
+  chroma_data:
