@@ -43,5 +43,5 @@ acceder a la interfaz
 
 ## 3. Requisitos
 
-LM Studio, el LLM esta corriendo en local (llama-3.2-3b-instruct) con el servidor en http://127.0.0.1:1234
-Correr chromadb en docker
+- LM Studio, el LLM esta corriendo en local (llama-3.2-3b-instruct) con el servidor en http://127.0.0.1:1234
+- Correr chromadb en docker
