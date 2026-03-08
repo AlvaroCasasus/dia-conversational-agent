@@ -1,3 +1,16 @@
+## Assessing RAG: A Comprehensive Review of Evaluation Frameworks
+
+[Paper link](https://doi.org/10.1109/ICCIKE67021.2025.11318213)
+
+El artículo señala que tradicionalmente la evaluación de RAG dependía de bases de datos etiquetadas manualmente por humanos, lo cual es costoso y lento. Para solucionar esto, destaca cómo varias herramientas modernas abordan la generación de datasets sintéticos o artificiales:
+- DeepEval: este marco de trabajo facilita la creación de datasets sintéticos. Esto permite a los usuarios establecer criterios de evaluación únicos, ofreciendo mucha flexibilidad para aplicaciones basadas en dominios específicos. [GitHub de DeepEval](https://github.com/confident-ai/deepeval).
+- RAGEval: introduce la generación de datasets de evaluación que son específicos para cada escenario (scenario-specific). [GitHub de RAGEval](https://github.com/OpenBMB/RAGEval).
+- ARES: esta herramienta emplea un pipeline de múltiples etapas que entrena a jueces evaluadores utilizando tripletes de "question-passage-answer" generados artificialmente. [GitHub de ARES](https://github.com/stanford-futuredata/ARES)
+
+Esta revisión concluye con que el ecosistema actual se está moviendo hacia la automatización y la creación de datos sintéticos. El objetivo de estas herramientas es reducir drásticamente la dependencia de los lentos y costosos procesos de anotación manual, permitiendo evaluaciones más rápidas, escalables y adaptadas al dominio particular de cada empresa o proyecto.
+
+---
+
 ## Know Your RAG: Dataset Taxonomy and Generation Strategies for Evaluating RAG Systems
 
 [Paper link](https://arxiv.org/html/2411.19710v1)
@@ -18,7 +31,7 @@ Los autores (investigadores de IBM) proponen dos estrategias principales para ge
 
 [Paper link](https://aclanthology.org/2025.acl-industry.33/)
 
-Se introduce una herramienta denominada *DataMorgan*. La creación del dataset se divide metodológicamente en dos etapas:
+Se introduce una herramienta denominada *DataMorgana*. La creación del dataset se divide metodológicamente en dos etapas:
 
 - Etapa de configuración: el usuario define las categorías de las preguntas y establece una distribución de probabilidad sobre ellas para determinar con qué frecuencia aparecerán en el dataset generado.
 - Etapa de generación: el dataset se construye de forma incremental (pregunta por pregunta) mediante un proceso muy ligero:
@@ -103,3 +116,5 @@ Así es como funciona su proceso de creación (detallado en el Algoritmo 1):
 Los autores destacan que en sectores como la medicina o las finanzas, evaluar un sistema RAG con datos reales podría exponer información confidencial de usuarios o pacientes. Sus experimentos demostraron que este enfoque de múltiples agentes logra ocultar los datos privados con gran precisión (identificando correctamente entre el 75% y el 91% de los datos sensibles según el sector) y, además, genera preguntas más diversas.
 
 ---
+
+
