@@ -45,16 +45,20 @@ El proceso se divide en los siguientes pasos:
 
 ## Método Fine-Tuning
 
-La idea principal de este método consiste en usar un **dataset existente de QA** para ajustar (*fine-tune*) el LLM generador de preguntas. Posteriormente, ese modelo se aplica a nuevos documentos para generar nuevas preguntas.
+El método propone entrenar un modelo pequeño de generación de preguntas mediante *fine-tuning*.  
 
-El modelo aprende la relación: context → question
+Para ello, primero se construye un dataset sintético de pares *(contexto, pregunta, respuesta)* a partir de los documentos, utilizando un pipeline basado en **statement extraction** del texto.  
 
+El modelo aprende a generar preguntas y respuestas condicionadas al contexto y al tipo de pregunta.  
 
-### Problemas de este enfoque
+Una vez entrenado, el modelo puede aplicarse a nuevos documentos para generar automáticamente datasets de evaluación para sistemas **RAG**.
 
-- Tiende a generar **preguntas muy genéricas**, que no son adecuadas para evaluar un sistema RAG.
-- Las preguntas **no siempre están alineadas con el texto**, pudiendo generar alucinaciones.
-- **Requiere un dataset inicial** para el entrenamiento.
+### Ventajas
+- Menor coste de generación. El modelo fine-tuneado permite generar preguntas y respuestas **sin depender continuamente de modelos grandes**, reduciendo el coste computacional.
+
+### Desventajas
+- Riesgo de alucinaciones. En este enfoque, el modelo genera la respuesta **a partir del contexto proporcionado**, lo que puede producir errores o información inventada.
+
 
 ---
 
@@ -135,25 +139,4 @@ Esto puede indicar problemas en:
 
 El sistema RAG se podrá evaluar utilizando **RAGAS**, que permite medir el rendimiento del sistema a partir del dataset generado.
 
----
-
-# Conclusión
-
-Tras analizar las distintas estrategias descritas en  el paper se concluye que la mejor opción para generar el dataset de nuestro proyecto es **Statement Extraction Strategy**.
-
-Este método permite:
-
-- Garantizar que las respuestas de cada query estén **dentro del corpus**
-- Reducir las **posibles alucinaciones del modelo**
-- Controlar el **tipo de preguntas generadas**
-
-Aunque implica un **pipeline más largo** y un **mayor coste computacional** que el enfoque basado en fine-tuning, ofrece **mayor control sobre la calidad del dataset**.
-
-Además, el dataset deberá incluir **diferentes tipos de preguntas** para garantizar su diversidad:
-
-- factual
-- summarization
-- reasoning
-
-Con un **predominio de las preguntas factuales**, debido a la naturaleza informativa del contexto del RAG. Esta distribución permitirá evaluar el sistema en **distintos niveles de complejidad**.
 
