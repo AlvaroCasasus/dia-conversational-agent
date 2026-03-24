@@ -55,14 +55,14 @@ class QADataset(BaseModel):
 
 llm_extractor = ChatOpenAI(
     model="qwen2.5:32b",
-    base_url="http://100.80.173.80:5000/v1",
+    base_url="http://100.115.179.39:5000/v1",
     api_key="not_required",
     temperature=0.1
 )
 
 llm_generator = ChatOpenAI(
     model="qwen2.5:32b",
-    base_url="http://100.80.173.80:5000/v1",
+    base_url="http://100.115.179.39:5000/v1",
     api_key="not_required",
     temperature=0.7
 )
