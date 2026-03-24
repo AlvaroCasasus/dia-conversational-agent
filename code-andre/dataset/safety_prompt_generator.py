@@ -36,6 +36,9 @@ import json
 import time
 from typing import Optional
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 from safety_categories import (
     CATEGORY_SPECS,
@@ -51,7 +54,7 @@ from safety_categories import (
 # with_structured_output(), which requires json_schema (not supported on all Groq models).
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
-    api_key="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", 
+    api_key=os.getenv("GROQ_API_KEY"),
 )
 MODEL = "llama-3.3-70b-versatile"
 
