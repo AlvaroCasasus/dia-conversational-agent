@@ -34,7 +34,7 @@ ollama_url = "http://100.114.130.128:5000"
 
 # LLM Local / Cluster
 llm = ChatOpenAI(
-    model="llama3.1:8b", 
+    model="gemma4:31b", 
     base_url=ollama_url + "/v1",
     api_key="not_required",
     temperature=0.1

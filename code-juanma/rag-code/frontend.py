@@ -34,7 +34,8 @@ def update_degree_dropdown(selected_courses):
     degrees = set()
     for course in selected_courses:
         if course in DB_CACHE["hierarchy"]:
-            degrees.update(DB_CACHE["hierarchy"][course].keys())
+            for degree in DB_CACHE["hierarchy"][course].keys():
+                degrees.add(f"{course} - {degree}")
     
     return gr.update(choices=sorted(list(degrees)), value=[])
 

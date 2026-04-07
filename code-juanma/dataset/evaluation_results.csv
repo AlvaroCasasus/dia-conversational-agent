@@ -1,0 +1,2 @@
+﻿sample_id,faithfulness,answer_relevancy,context_precision,context_recall,answer_similarity,answer_correctness
+1,0.6666666666666666,0.0,0.0,1.0,0.4701053343655944,0.4925263335913986

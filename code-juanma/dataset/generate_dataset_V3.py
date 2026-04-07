@@ -212,7 +212,7 @@ def generate_evaluation_dataset(n: int = 20):
     return dataset
 
 if __name__ == "__main__":
-    # Generate 20 samples
+    # Generate X samples
     data = generate_evaluation_dataset(100)
     if data:
         output_file = "rag_dataset_v3.json"
