@@ -1,0 +1,5 @@
+metric,baseline,verbalized,delta,trend
+context_recall,0.9500,0.9000,-0.0500,↓
+context_precision,0.4601,0.5875,0.1274,↑
+faithfulness,0.9375,1.0000,0.0625,↑
+answer_relevancy,0.6393,0.7308,0.0915,↑
