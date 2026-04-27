@@ -23,14 +23,14 @@ class BasicRAG:
 
         self.llm = ChatOpenAI(
             model="qwen2.5:32b",
-            base_url="http://100.100.52.14:5000/v1",
+            base_url="http://100.84.51.82:5000/v1",
             api_key="not_required",
             temperature=0.1
         )
 
         self.embeddings = OllamaEmbeddings(
             model="qwen3-embedding:8b",
-            base_url="http://100.100.52.14:5000"
+            base_url="http://100.84.51.82:5000"
         )
 
         #Cambiar para ejecutar en local
@@ -217,7 +217,7 @@ class BasicRAG:
 
 
 
-    async def query(self, question: str, selected_files) -> str:
+    async def query(self, question: str, selected_files, k : int = 6) -> str:
 
         # --- Build conversation history string ---
         formatted_history = ""
@@ -262,7 +262,7 @@ Output only the 5 standalone alternative queries, one per line, no numbering.
         # --- 2. Parallel retrieval ---
         search_filter = self._build_filter(selected_files)
         retriever = self.vectorstore.as_retriever(
-            search_kwargs={"k": 6, "filter": search_filter}
+            search_kwargs={"k": k, "filter": search_filter}
         )
 
         tasks = [retriever.ainvoke(q) for q in queries]

@@ -109,6 +109,9 @@ def _process_folder(course: str, category: str, degree: str, path: str) -> None:
 
         except Exception as exc:
             print(f"  [{index}/{total}] -- Error: {exc}")
+            
+        finally: 
+            time.sleep(3)  # Small delay to avoid overwhelming the backend
 
 
 if __name__ == "__main__":
