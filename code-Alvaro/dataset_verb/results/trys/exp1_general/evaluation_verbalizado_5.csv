@@ -1,0 +1,5 @@
+run,metric,verbalizado
+5,context_recall,0.711969111969112
+5,context_precision,0.46918168164187185
+5,faithfulness,0.9374356499356499
+5,answer_relevancy,0.6788507771886305

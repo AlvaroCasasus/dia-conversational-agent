@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from typing import List, Dict, Any
 import chromadb
 
@@ -23,14 +24,14 @@ class BasicRAG:
 
         self.llm = ChatOpenAI(
             model="qwen2.5:32b",
-            base_url="http://100.84.51.82:5000/v1",
+            base_url="http://100.83.251.20:5000/v1",
             api_key="not_required",
             temperature=0.1
         )
 
         self.embeddings = OllamaEmbeddings(
             model="qwen3-embedding:8b",
-            base_url="http://100.84.51.82:5000"
+            base_url="http://100.83.251.20:5000"
         )
 
         #Cambiar para ejecutar en local
@@ -55,6 +56,8 @@ class BasicRAG:
 
         # Last retrieved docs for /inspector
         self.last_retrieved_docs = []
+        #Latency tracking for performance evaluation
+        self.last_generation_latency: float = -1
 
     # ------------------------------------------------------------------
     # Document ingestion
@@ -217,8 +220,11 @@ class BasicRAG:
 
 
 
-    async def query(self, question: str, selected_files, k : int = 6) -> str:
-
+    async def query(self, question: str, selected_files, k : int = 6, use_multiquery: bool = True) -> str:
+        
+        #eliminar historial para evaluar solo la respuesta a la pregunta sin contexto conversacional
+        self.session_history = []
+        
         # --- Build conversation history string ---
         formatted_history = ""
         for turn in self.session_history:
@@ -226,56 +232,68 @@ class BasicRAG:
         if not formatted_history:
             formatted_history = "Beginning of the conversation."
 
-        # --- 1. Multi-Query generation ---
-        mq_template = """
-You are an expert Academic Search Assistant. Your goal is to rewrite and expand the
-user's current question into 5 distinct, standalone search queries for a vector database.
-
-CRITICAL RULES:
-1. CONTEXTUAL RESOLUTION: If the user's question contains pronouns or implicit references,
-   use the Chat History to resolve them into full subject names or topics.
-2. STANDALONE QUERIES: Each query must be complete and understandable without the chat history.
-3. PERSPECTIVES: Cover different aspects: formal name, specific requirements, evaluation
-   criteria, and related terminology.
-4. LANGUAGE: Output queries in the same language as the user's question.
-
-Chat history:
-{chat_history}
-
-User question:
-{question}
-
-Output only the 5 standalone alternative queries, one per line, no numbering.
-"""
-        prompt_mq = PromptTemplate.from_template(mq_template)
-        mq_chain = prompt_mq | self.llm | StrOutputParser()
-
-        generated_queries_str = mq_chain.invoke(
-            {"question": question, "chat_history": formatted_history}
-        )
-
-        queries = [question] + [
-            q.strip() for q in generated_queries_str.split("\n") if q.strip()
-        ]
-        print(f"Generated queries:\n{queries}")
-
-        # --- 2. Parallel retrieval ---
         search_filter = self._build_filter(selected_files)
-        retriever = self.vectorstore.as_retriever(
-            search_kwargs={"k": k, "filter": search_filter}
-        )
 
-        tasks = [retriever.ainvoke(q) for q in queries]
-        all_results = await asyncio.gather(*tasks)
+        # --- 1. Multi-Query generation ---
+        if use_multiquery:
+            mq_template = """
+    You are an expert Academic Search Assistant. Your goal is to rewrite and expand the
+    user's current question into 5 distinct, standalone search queries for a vector database.
 
-        # --- 3. Reciprocal Rank Fusion ---
-        fused_docs = self._reciprocal_rank_fusion(all_results)
-        final_docs = [doc for doc, _ in fused_docs[:6]]
+    CRITICAL RULES:
+    1. CONTEXTUAL RESOLUTION: If the user's question contains pronouns or implicit references,
+    use the Chat History to resolve them into full subject names or topics.
+    2. STANDALONE QUERIES: Each query must be complete and understandable without the chat history.
+    3. PERSPECTIVES: Cover different aspects: formal name, specific requirements, evaluation
+    criteria, and related terminology.
+    4. LANGUAGE: Output queries in the same language as the user's question.
+
+    Chat history:
+    {chat_history}
+
+    User question:
+    {question}
+
+    Output only the 5 standalone alternative queries, one per line, no numbering.
+    """
+            prompt_mq = PromptTemplate.from_template(mq_template)
+            mq_chain = prompt_mq | self.llm | StrOutputParser()
+
+            generated_queries_str = mq_chain.invoke(
+                {"question": question, "chat_history": formatted_history}
+            )
+
+            queries = [question] + [
+                q.strip() for q in generated_queries_str.split("\n") if q.strip()
+            ]
+            print(f"Generated queries:\n{queries}")
+
+            # --- 2. Parallel retrieval ---
+            
+            retriever = self.vectorstore.as_retriever(
+                search_kwargs={"k": k, "filter": search_filter}
+            )
+
+            tasks = [retriever.ainvoke(q) for q in queries]
+            all_results = await asyncio.gather(*tasks)
+
+            # --- 3. Reciprocal Rank Fusion ---
+            fused_docs = self._reciprocal_rank_fusion(all_results)
+            final_docs = [doc for doc, _ in fused_docs[:k]] #CAMBIAR NÚMERO DE CHUNKS FINALES
+            
+
+        else :
+            retriever = self.vectorstore.as_retriever(
+                search_kwargs={"k": k, "filter": search_filter}
+            )
+            final_docs = await retriever.ainvoke(question)
+
+        
         self.last_retrieved_docs = final_docs
 
         if not final_docs:
             return "No relevant context found for the selected documents."
-
+        
         # --- 4. Context assembly ---
         context_text = ""
         for d in final_docs:
@@ -321,6 +339,7 @@ Output only the 5 standalone alternative queries, one per line, no numbering.
         prompt_qa = ChatPromptTemplate.from_template(template_qa)
         qa_chain = prompt_qa | self.llm | StrOutputParser()
 
+        t0 = time.perf_counter()
         response = qa_chain.invoke(
             {
                 "context": context_text,
@@ -328,6 +347,7 @@ Output only the 5 standalone alternative queries, one per line, no numbering.
                 "chat_history": formatted_history,
             }
         )
+        self.last_generation_latency = time.perf_counter() - t0
 
         # --- 6. Update session history (keep last 10 turns) ---
         self.session_history.append({"user": question, "bot": response})

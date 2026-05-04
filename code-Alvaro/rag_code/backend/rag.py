@@ -28,20 +28,20 @@ class BasicRAG:
 
         self.llm = ChatOpenAI(
             model="qwen2.5:32b",
-            base_url="http://100.97.20.71:5000/v1",
+            base_url="http://100.83.251.20:5000/v1",
             api_key="not_required",
             temperature=0.1
         )
 
         self.embeddings = OllamaEmbeddings(
         model="qwen3-embedding:8b",
-        base_url="http://100.97.20.71:5000"
+        base_url="http://100.83.251.20:5000"
         )
         
 
         chroma_client = chromadb.HttpClient(
             host="localhost",
-            port=8000
+            port=8001
         )
 
         self.vectorstore = Chroma(

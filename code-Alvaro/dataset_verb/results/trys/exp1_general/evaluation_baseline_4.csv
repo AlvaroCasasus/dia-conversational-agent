@@ -1,0 +1,5 @@
+run,metric,baseline
+4,context_recall,0.7353442728442728
+4,context_precision,0.4960210209788602
+4,faithfulness,0.9108502702252702
+4,answer_relevancy,0.6363670034069611

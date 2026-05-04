@@ -250,7 +250,7 @@ if __name__ == "__main__":
         pair.source_document = pdf_filename
 
     # D. Save results
-    output_file = "dataset_baseline_7.json"
+    output_file = "dataset_baseline.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(final_dataset.model_dump(), f, ensure_ascii=False, indent=4)
 
