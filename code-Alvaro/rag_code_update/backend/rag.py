@@ -315,6 +315,27 @@ class BasicRAG:
             )
 
         # --- 5. Answer generation ---
+        # template_qa = (
+        #     "You are an expert Academic Advisor for university students.\n"
+        #     "Your task is to answer the user's question using EXCLUSIVELY the provided context.\n\n"
+        #     "STRICT RULES:\n"
+        #     "1. NO EXTERNAL KNOWLEDGE: use only the provided fragments. If the context doesn't "
+        #     "contain the answer, simply state that you don't know.\n"
+        #     "2. CLARITY: be concise but clear. If the question is ambiguous, ask for clarification "
+        #     "instead of guessing.\n"
+        #     "3. STRUCTURE: use bullet points or numbered lists for complex information if needed.\n"
+        #     "4. NO HALLUCINATIONS: do not invent dates, names of professors, or percentages if "
+        #     "they are not explicitly in the context.\n"
+        #     "5. LANGUAGE: respond in the same language as the user's question.\n\n"
+        #     "CHAT HISTORY (for conversation flow):\n"
+        #     "{chat_history}\n\n"
+        #     "CONTEXT (relevant fragments from academic guides):\n"
+        #     "{context}\n\n"
+        #     "USER QUESTION:\n"
+        #     "{question}\n\n"
+        #     "ANSWER (precise, structured):"
+        # )
+        
         template_qa = (
             "You are an expert Academic Advisor for university students.\n"
             "Your task is to answer the user's question using EXCLUSIVELY the provided context.\n\n"
@@ -323,7 +344,8 @@ class BasicRAG:
             "contain the answer, simply state that you don't know.\n"
             "2. CLARITY: be concise but clear. If the question is ambiguous, ask for clarification "
             "instead of guessing.\n"
-            "3. STRUCTURE: use bullet points or numbered lists for complex information if needed.\n"
+            "3. FORMAT: always respond in plain continuous prose. Do NOT use bullet points, "
+            "numbered lists, or markdown formatting. Integrate all information into coherent sentences.\n"
             "4. NO HALLUCINATIONS: do not invent dates, names of professors, or percentages if "
             "they are not explicitly in the context.\n"
             "5. LANGUAGE: respond in the same language as the user's question.\n\n"
@@ -333,7 +355,7 @@ class BasicRAG:
             "{context}\n\n"
             "USER QUESTION:\n"
             "{question}\n\n"
-            "ANSWER (precise, structured):"
+            "ANSWER (precise, in plain prose):"
         )
 
         prompt_qa = ChatPromptTemplate.from_template(template_qa)

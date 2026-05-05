@@ -56,9 +56,9 @@ class QAPair(BaseModel):
     source_document: str = Field(description="Filename of the source PDF.")
     chunk_id: str = Field(description="Unique identifier for the chunk.")
     #question_type: str = Field(description="factual, procedural, comparative, out_of_scope or ambiguous")
-    question_type: Literal["factual", "summarization", "multi_hop", "out_of_scope", "ambiguous"]
-    topic: Literal["plan_de_estudios", "matricula", "tfm", "profesorado", "otros"] = Field(description="Thematic area")
-    difficulty: Literal["easy", "medium", "hard"] = Field(description="Difficulty level")
+    question_type: Literal["factual", "summarization", "multi_hop", "Unanswerable", "ambiguous"]
+    #topic: Literal["plan_de_estudios", "matricula", "tfm", "profesorado", "otros"] = Field(description="Thematic area")
+    #difficulty: Literal["easy", "medium", "hard"] = Field(description="Difficulty level")
 
 # ==========================================
 # HELPERS
@@ -137,24 +137,21 @@ def generate_base_dataset(n: int = N_SAMPLES) -> list:
         2. generation_method: Always use 'llm_generated'.
         3. answer: ALWAYS leave this field as an empty string "". Do NOT fill it.
         4. contexts: ALWAYS leave this as an empty list []. Do NOT fill it.
-        5. topic: Categorize into: plan_de_estudios, matricula, tfm, profesorado, or otros.
-        6. difficulty:
-           - 'easy': Answer is explicitly stated in a single sentence.
-           - 'medium': Requires consulting multiple parts of the text or minor paraphrasing.
-           - 'hard': Answer is implicit, requires synthesis of multiple sources.
 
         Taxonomy of question_type:
         - factual: Single-hop fact explicitly stated in the text.
         - summarization: Requires synthesizing or grouping multiple elements of information.
         - multi_hop: Requires combining information from different parts of the document to infer the answer.
-        - out_of_scope: Plausible but missing from text.
+        - Unanswerable: Question cannot be answered with the provided context.
         - ambiguous: Vague query.
 
         CRITICAL RULES FOR ground_truth:
-        - Write as a complete natural sentence in Spanish, minimum 15 words.
+        - Write as a complete, self-contained answer in Spanish that fully addresses the question.
+        - The answer must be informative enough that someone without access to the source document can understand it.
+        - Must contain all key facts needed to evaluate a RAG answer (dates, percentages, names, conditions).
         - NEVER copy raw codes or table text from the context (e.g. '14, 3 = ...' or 'ASI Natura 103000361').
         - NEVER use 'yes', 'no', or single words as the answer.
-        - For out_of_scope questions: ground_truth must be exactly the string 'out_of_scope'.
+        - For Unanswerable questions: ground_truth must be exactly the string 'Unanswerable'.
         - Good example: 'La asignatura se evalúa mediante dos prácticas grupales con peso del 30% cada una y un examen final del 40%.'
         - Bad example: '14, 3 = Presentation of second assignment' or 'yes' or 'ASI Natura 103000361'
         """),
@@ -164,7 +161,7 @@ def generate_base_dataset(n: int = N_SAMPLES) -> list:
     generator = prompt | llm.with_structured_output(QAPair)
 
     #q_types = ["factual", "procedural", "comparative", "out_of_scope", "ambiguous"]
-    q_types = ["factual", "summarization", "multi_hop", "out_of_scope", "ambiguous"]
+    q_types = ["factual", "summarization", "multi_hop", "Unanswerable", "ambiguous"]
     probabilities = [0.4, 0.2, 0.2, 0.1, 0.1]
 
     dataset = []
@@ -186,11 +183,11 @@ def generate_base_dataset(n: int = N_SAMPLES) -> list:
             record.answer = ""
             record.contexts = []
 
-            if q_type == "out_of_scope":
+            if q_type == "Unanswerable":
                 record.source_document = "N/A"
                 record.reference_contexts = []
                 record.chunk_id = "N/A"
-                record.ground_truth = "out_of_scope"  # force label
+                record.ground_truth = "Unanswerable"  # force label
             else:
                 record.source_document = chunk['metadata'].get('source', 'unknown')
                 record.chunk_id = chunk['id']

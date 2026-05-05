@@ -121,17 +121,35 @@ def run_evaluation(dataset_path: str, output_csv: str, sample_percentage: float 
         ]
 
         final_columns = [col for col in desired_columns if col in df_results.columns]
-        df_filtered = df_results[final_columns]
+        df_filtered = df_results[final_columns].copy()
         df_filtered.insert(0, "sample_id", eval_dataset["sample_id"])
         df_filtered.insert(1, "generation_latency", eval_dataset["latency"])
 
-        df_filtered.to_csv(output_csv, index=False, encoding="utf-8-sig")
+        #df_filtered.to_csv(output_csv, index=False, encoding="utf-8-sig")
 
         # Print mean scores for quick inspection
         print(f"\n=== EVALUATION COMPLETED ===")
-        print(df_filtered[final_columns].mean().to_string())
-        print(f"Mean latency: {df_filtered['latency'].mean():.2f}s")
+        
+        means = df_filtered[final_columns].mean()
+        
+        print(f"\n{'Metric':<25} {'Score':>8}")
+        print("-" * 35)
+        for metric, value in means.items():
+            print(f"{metric:<25} {value:>8.4f}")
+        print("-" * 35)
+        print(f"{'mean_latency':<25} {df_filtered['generation_latency'].mean():>8.2f}s")
         print(f"\nResults saved to: {output_csv}")
+        
+        means_row = {col: round(df_filtered[col].mean(skipna=True), 4) for col in final_columns}
+        means_row["sample_id"] = "MEAN"
+        means_row["generation_latency"] = round(df_filtered["generation_latency"].mean(), 2)
+
+        df_with_means = pandas.concat(
+            [df_filtered, pandas.DataFrame([means_row])],
+            ignore_index=True
+        )
+
+        df_with_means.to_csv(output_csv, index=False, encoding="utf-8-sig")
 
     except Exception as e:
         print(f"\nError during evaluation: {e}")
