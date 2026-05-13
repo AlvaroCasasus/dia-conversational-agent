@@ -109,6 +109,32 @@ async def upload_files(
 #     return {"answer": answer, "response": answer}
 
 
+# @app.post("/chat")
+# async def chat(request: ChatRequest, k: int = 6, context: bool = False, use_multiquery: bool = True):
+#     question = request.message or request.question
+#     if not question:
+#         raise HTTPException(status_code=400, detail="Missing 'message' or 'question' field")
+
+#     if request.selected_context:
+#         selected = [ctx.model_dump() for ctx in request.selected_context]
+#     elif request.selected_files:
+#         selected = request.selected_files
+#     else:
+#         return {"answer": "No context selected.", "response": "No context selected."}
+
+#     answer = await rag.query(question, selected, k=k, use_multiquery=use_multiquery)
+
+#     response_payload = {
+#         "answer": answer,
+#         "response": answer,
+#         "generation_latency": rag.last_generation_latency,  # ← nuevo
+#     }
+
+#     if context:
+#         response_payload["context"] = [doc.page_content for doc in rag.last_retrieved_docs]
+
+#     return response_payload
+
 @app.post("/chat")
 async def chat(request: ChatRequest, k: int = 6, context: bool = False, use_multiquery: bool = True):
     question = request.message or request.question
@@ -120,14 +146,14 @@ async def chat(request: ChatRequest, k: int = 6, context: bool = False, use_mult
     elif request.selected_files:
         selected = request.selected_files
     else:
-        return {"answer": "No context selected.", "response": "No context selected."}
+        selected = []  # ← sin filtro, busca en toda la base de datos
 
     answer = await rag.query(question, selected, k=k, use_multiquery=use_multiquery)
 
     response_payload = {
         "answer": answer,
         "response": answer,
-        "generation_latency": rag.last_generation_latency,  # ← nuevo
+        "generation_latency": rag.last_generation_latency,
     }
 
     if context:

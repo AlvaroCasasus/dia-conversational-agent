@@ -1,3 +1,8 @@
+"""
+evaluate.py
+------------------------
+
+"""
 import json
 import httpx
 import pandas
@@ -21,7 +26,7 @@ from ragas.metrics import (
 )
 
 
-ollama_url = "http://100.83.251.20:5000"
+ollama_url = "http://100.86.34.41:11434"
 
 custom_http_client = httpx.Client(timeout=1200.0)
 custom_async_client = httpx.AsyncClient(timeout=1200.0)
@@ -50,7 +55,7 @@ evaluator_embeddings = LangchainEmbeddingsWrapper(base_embeddings)
 # Prevent VRAM overload by evaluating one item at a time
 run_config = RunConfig(timeout=1200, max_workers=1)
 
-def run_evaluation(dataset_path: str, output_csv: str, sample_percentage: float = 1.0):
+def run_evaluation(dataset_path: str, output_csv: str, sample_percentage: float = 0.5):
     """
     Evaluates a RAG dataset using Ragas metrics for H6 experiment (optimal k).
     
@@ -70,7 +75,7 @@ def run_evaluation(dataset_path: str, output_csv: str, sample_percentage: float 
             data = json.load(f)
 
         # Filter out out_of_scope items (ground_truth label, not a real answer)
-        data = [item for item in data if item.get("ground_truth") != "out_of_scope"]
+        #data = [item for item in data if item.get("ground_truth") != "out_of_scope"]
 
         total_items = len(data)
         num_samples = int(total_items * sample_percentage)
@@ -142,7 +147,10 @@ def run_evaluation(dataset_path: str, output_csv: str, sample_percentage: float 
         
         means_row = {col: round(df_filtered[col].mean(skipna=True), 4) for col in final_columns}
         means_row["sample_id"] = "MEAN"
-        means_row["generation_latency"] = round(df_filtered["generation_latency"].mean(), 2)
+        means_row["generation_latency"] = round(
+            pandas.to_numeric(df_filtered["generation_latency"], errors="coerce")
+            .replace(-1, pandas.NA).mean(skipna=True), 2
+        )
 
         df_with_means = pandas.concat(
             [df_filtered, pandas.DataFrame([means_row])],

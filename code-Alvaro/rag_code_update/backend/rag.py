@@ -24,14 +24,14 @@ class BasicRAG:
 
         self.llm = ChatOpenAI(
             model="qwen2.5:32b",
-            base_url="http://100.83.251.20:5000/v1",
+            base_url="http://100.86.34.41:11434/v1",
             api_key="not_required",
             temperature=0.1
         )
 
         self.embeddings = OllamaEmbeddings(
             model="qwen3-embedding:8b",
-            base_url="http://100.83.251.20:5000"
+            base_url="http://100.86.34.41:11434"
         )
 
         #Cambiar para ejecutar en local
@@ -174,14 +174,14 @@ class BasicRAG:
         reranked = sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
         return [(doc_lookup[doc_id], score) for doc_id, score in reranked]
 
+
     def _build_filter(self, selected_files: List[str]) -> dict:
         """
         Build a ChromaDB metadata filter from a list of filenames.
         Supports simple filename strings OR dicts with course/degree/source keys.
         """
-        # Normalise: accept plain strings (legacy) or dicts (advanced)
         if not selected_files:
-            return {}
+            return None
 
         # Plain filenames (legacy interface)
         if isinstance(selected_files[0], str):
@@ -193,25 +193,28 @@ class BasicRAG:
         # Rich context objects (advanced interface)
         if len(selected_files) == 1:
             ctx = selected_files[0]
-            return {
-                "$and": [
-                    {"course": ctx["course"]},
-                    {"degree": ctx["degree"]},
-                    {"source": ctx["source"]},
-                ]
-            }
+            conditions = [
+                {"course": ctx["course"]},
+                {"degree": ctx["degree"]},
+            ]
+            if ctx.get("source"):  # solo añade source si viene informado
+                conditions.append({"source": ctx["source"]})
 
+            if len(conditions) == 1:
+                return conditions[0]
+            return {"$and": conditions}
+
+        # Multiple context objects
         filter_list = []
         for ctx in selected_files:
-            filter_list.append(
-                {
-                    "$and": [
-                        {"course": ctx["course"]},
-                        {"degree": ctx["degree"]},
-                        {"source": ctx["source"]},
-                    ]
-                }
-            )
+            conditions = [
+                {"course": ctx["course"]},
+                {"degree": ctx["degree"]},
+            ]
+            if ctx.get("source"):
+                conditions.append({"source": ctx["source"]})
+            filter_list.append({"$and": conditions})
+
         return {"$or": filter_list}
 
     # ------------------------------------------------------------------
@@ -220,9 +223,9 @@ class BasicRAG:
 
 
 
-    async def query(self, question: str, selected_files, k : int = 6, use_multiquery: bool = True) -> str:
+    async def query(self, question: str, selected_files, k: int = 6, use_multiquery: bool = True) -> str:
         
-        #eliminar historial para evaluar solo la respuesta a la pregunta sin contexto conversacional
+        # Eliminar historial para evaluar solo la respuesta a la pregunta sin contexto conversacional
         self.session_history = []
         
         # --- Build conversation history string ---
@@ -233,6 +236,7 @@ class BasicRAG:
             formatted_history = "Beginning of the conversation."
 
         search_filter = self._build_filter(selected_files)
+        search_kwargs = {"k": k, **({"filter": search_filter} if search_filter else {})}
 
         # --- 1. Multi-Query generation ---
         if use_multiquery:
@@ -268,32 +272,22 @@ class BasicRAG:
             ]
             print(f"Generated queries:\n{queries}")
 
-            # --- 2. Parallel retrieval ---
-            
-            retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": k, "filter": search_filter}
-            )
-
+            retriever = self.vectorstore.as_retriever(search_kwargs=search_kwargs)
             tasks = [retriever.ainvoke(q) for q in queries]
             all_results = await asyncio.gather(*tasks)
 
-            # --- 3. Reciprocal Rank Fusion ---
             fused_docs = self._reciprocal_rank_fusion(all_results)
-            final_docs = [doc for doc, _ in fused_docs[:k]] #CAMBIAR NÚMERO DE CHUNKS FINALES
-            
+            final_docs = [doc for doc, _ in fused_docs[:k]]
 
-        else :
-            retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": k, "filter": search_filter}
-            )
+        else:
+            retriever = self.vectorstore.as_retriever(search_kwargs=search_kwargs)
             final_docs = await retriever.ainvoke(question)
 
-        
         self.last_retrieved_docs = final_docs
 
         if not final_docs:
             return "No relevant context found for the selected documents."
-        
+
         # --- 4. Context assembly ---
         context_text = ""
         for d in final_docs:
@@ -314,48 +308,27 @@ class BasicRAG:
                 f"Chunk {doc.metadata.get('chunk_index', 0)}"
             )
 
-        # --- 5. Answer generation ---
-        # template_qa = (
-        #     "You are an expert Academic Advisor for university students.\n"
-        #     "Your task is to answer the user's question using EXCLUSIVELY the provided context.\n\n"
-        #     "STRICT RULES:\n"
-        #     "1. NO EXTERNAL KNOWLEDGE: use only the provided fragments. If the context doesn't "
-        #     "contain the answer, simply state that you don't know.\n"
-        #     "2. CLARITY: be concise but clear. If the question is ambiguous, ask for clarification "
-        #     "instead of guessing.\n"
-        #     "3. STRUCTURE: use bullet points or numbered lists for complex information if needed.\n"
-        #     "4. NO HALLUCINATIONS: do not invent dates, names of professors, or percentages if "
-        #     "they are not explicitly in the context.\n"
-        #     "5. LANGUAGE: respond in the same language as the user's question.\n\n"
-        #     "CHAT HISTORY (for conversation flow):\n"
-        #     "{chat_history}\n\n"
-        #     "CONTEXT (relevant fragments from academic guides):\n"
-        #     "{context}\n\n"
-        #     "USER QUESTION:\n"
-        #     "{question}\n\n"
-        #     "ANSWER (precise, structured):"
-        # )
-        
+        # --- 5. Answer generation ---  ← FUERA del for, al mismo nivel
         template_qa = (
-            "You are an expert Academic Advisor for university students.\n"
-            "Your task is to answer the user's question using EXCLUSIVELY the provided context.\n\n"
-            "STRICT RULES:\n"
-            "1. NO EXTERNAL KNOWLEDGE: use only the provided fragments. If the context doesn't "
-            "contain the answer, simply state that you don't know.\n"
-            "2. CLARITY: be concise but clear. If the question is ambiguous, ask for clarification "
-            "instead of guessing.\n"
-            "3. FORMAT: always respond in plain continuous prose. Do NOT use bullet points, "
-            "numbered lists, or markdown formatting. Integrate all information into coherent sentences.\n"
-            "4. NO HALLUCINATIONS: do not invent dates, names of professors, or percentages if "
-            "they are not explicitly in the context.\n"
-            "5. LANGUAGE: respond in the same language as the user's question.\n\n"
-            "CHAT HISTORY (for conversation flow):\n"
+            "Eres un Asesor Académico experto para estudiantes universitarios.\n"
+            "Tu tarea es responder la pregunta del usuario utilizando EXCLUSIVAMENTE el contexto proporcionado.\n\n"
+            "REGLAS ESTRICTAS:\n"
+            "1. SIN CONOCIMIENTO EXTERNO: usa únicamente los fragmentos proporcionados. Si el contexto no "
+            "contiene la respuesta, indica simplemente que no lo sabes.\n"
+            "2. CLARIDAD: sé conciso pero claro. Si la pregunta es ambigua, pide aclaraciones "
+            "en lugar de suposiciones.\n"
+            "3. FORMATO: responde siempre en prosa continua. NUNCA uses bullet points, "
+            "listas numeradas ni formato markdown. Integra toda la información en frases coherentes.\n"
+            "4. SIN ALUCINACIONES: no inventes fechas, nombres de profesores ni porcentajes si "
+            "no aparecen explícitamente en el contexto.\n"
+            "5. IDIOMA: responde en el mismo idioma que la pregunta del usuario.\n\n"
+            "HISTORIAL DE CONVERSACIÓN (para el flujo conversacional):\n"
             "{chat_history}\n\n"
-            "CONTEXT (relevant fragments from academic guides):\n"
+            "CONTEXTO (fragmentos relevantes de las guías académicas):\n"
             "{context}\n\n"
-            "USER QUESTION:\n"
+            "PREGUNTA DEL USUARIO:\n"
             "{question}\n\n"
-            "ANSWER (precise, in plain prose):"
+            "RESPUESTA (precisa, en prosa continua):"
         )
 
         prompt_qa = ChatPromptTemplate.from_template(template_qa)
@@ -371,12 +344,13 @@ class BasicRAG:
         )
         self.last_generation_latency = time.perf_counter() - t0
 
-        # --- 6. Update session history (keep last 10 turns) ---
+        # --- 6. Update session history ---
         self.session_history.append({"user": question, "bot": response})
         if len(self.session_history) > 10:
             self.session_history.pop(0)
 
         return response
+
 
     # ------------------------------------------------------------------
     # Document listing with full hierarchy

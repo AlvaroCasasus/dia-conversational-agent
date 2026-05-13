@@ -22,7 +22,7 @@ from evaluate import run_evaluation
  
 BACKEND_URL = "http://localhost:9000"
 BASE_DATASET_PATH = "datasets/base_dataset.json"
-K_VALUES = [1, 3, 5, 10, 15]
+K_VALUES = [5, 7, 10, 15, 20]
  
 os.makedirs("datasets", exist_ok=True)
 os.makedirs("results", exist_ok=True)
@@ -31,8 +31,9 @@ os.makedirs("results", exist_ok=True)
 # RAG CALL
 # ==========================================
  
+
+
 # def get_rag_response(question: str, chunk_metadata: dict, k: int) -> dict:
-#     """Calls the RAG backend with a specific k value."""
 #     try:
 #         payload = {
 #             "message": question,
@@ -43,24 +44,21 @@ os.makedirs("results", exist_ok=True)
 #             }],
 #             "chat_history": []
 #         }
- 
-#         t0 = time.time()
+
 #         response = requests.post(
 #             f"{BACKEND_URL}/chat?context=True&k={k}&use_multiquery=False",
 #             json=payload,
 #             timeout=300,
 #         )
-#         latency = time.time() - t0
- 
 #         response.raise_for_status()
 #         data = response.json()
- 
+
 #         return {
 #             "response": data.get("response", "No response from RAG"),
 #             "context": data.get("context", []),
-#             "latency": latency,
+#             "latency": data.get("generation_latency", -1),  # ← del backend
 #         }
- 
+
 #     except Exception as e:
 #         return {"response": f"RAG Error: {str(e)}", "context": [], "latency": -1}
 
@@ -77,7 +75,7 @@ def get_rag_response(question: str, chunk_metadata: dict, k: int) -> dict:
         }
 
         response = requests.post(
-            f"{BACKEND_URL}/chat?context=True&k={k}&use_multiquery=False",
+            f"{BACKEND_URL}/chat?context=True&k={k}&use_multiquery=True",
             json=payload,
             timeout=300,
         )
@@ -108,7 +106,7 @@ def run_experiment():
         base_data = json.load(f)
  
     # Filter out out_of_scope (no valid ground truth for evaluation)
-    base_data = [item for item in base_data if item.get("ground_truth") != "out_of_scope"]
+    #base_data = [item for item in base_data if item.get("ground_truth") != "out_of_scope"]
     print(f"Base dataset loaded: {len(base_data)} items (out_of_scope filtered)")
  
     for k in K_VALUES:
@@ -135,7 +133,7 @@ def run_experiment():
             dataset_k.append(new_item)
  
         # Save dataset for this k
-        dataset_path = f"datasets/dataset_k{k}.json"
+        dataset_path = f"datasets/dataset_k{k}_multi.json"
         with open(dataset_path, "w", encoding="utf-8") as f:
             json.dump(dataset_k, f, ensure_ascii=False, indent=4)
         print(f"\nDataset k={k} saved to {dataset_path}")
@@ -143,7 +141,7 @@ def run_experiment():
         # Evaluate
         run_evaluation(
             dataset_path=dataset_path,
-            output_csv=f"results/evaluation_k{k}.csv",
+            output_csv=f"results/evaluation_k{k}_multi_summ.csv",
             sample_percentage=0.5,  # evaluate on 50% of the dataset for speed; adjust as needed
         )
  

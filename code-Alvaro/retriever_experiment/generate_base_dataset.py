@@ -29,8 +29,8 @@ CHROMA_PORT = 8000
 COLLECTION_NAME = "rag_dia"
 
 LLM_CONFIG = {
-    "model": "llama3.1:8b",
-    "base_url": "http://100.83.251.20:5000/v1",
+    "model": "qwen2.5:32b",
+    "base_url": "http://100.80.246.115:5000/v1",
     "api_key": "not_required",
     "temperature": 0.7
 }
@@ -56,7 +56,7 @@ class QAPair(BaseModel):
     source_document: str = Field(description="Filename of the source PDF.")
     chunk_id: str = Field(description="Unique identifier for the chunk.")
     #question_type: str = Field(description="factual, procedural, comparative, out_of_scope or ambiguous")
-    question_type: Literal["factual", "summarization", "multi_hop", "Unanswerable", "ambiguous"]
+    question_type: Literal["factual", "summarization", "multi_hop", "ambiguous"]
     #topic: Literal["plan_de_estudios", "matricula", "tfm", "profesorado", "otros"] = Field(description="Thematic area")
     #difficulty: Literal["easy", "medium", "hard"] = Field(description="Difficulty level")
 
@@ -129,40 +129,69 @@ def generate_base_dataset(n: int = N_SAMPLES) -> list:
     #     ("human", "Context: {chunk_text}\nMetadata: {metadata}\nType requested: '{q_type}'")
     # ])
     
+    # prompt = ChatPromptTemplate.from_messages([
+    #     ("system", """You are an academic evaluator for RAG systems. Your task is to generate high-quality QA pairs in Spanish.
+
+    #     STRICT FORMAT RULES:
+    #     1. language: Always use 'es'.
+    #     2. generation_method: Always use 'llm_generated'.
+    #     3. answer: ALWAYS leave this field as an empty string "". Do NOT fill it.
+    #     4. contexts: ALWAYS leave this as an empty list []. Do NOT fill it.
+
+    #     Taxonomy of question_type:
+    #     - factual: Single-hop fact explicitly stated in the text.
+    #     - summarization: Requires synthesizing or grouping multiple elements of information.
+    #     - multi_hop: Requires combining information from different parts of the document to infer the answer.
+    #     - Unanswerable: Question cannot be answered with the provided context.
+    #     - ambiguous: Vague query.
+
+    #     CRITICAL RULES FOR ground_truth:
+    #     - Write as a complete, self-contained answer in Spanish that fully addresses the question.
+    #     - The answer must be informative enough that someone without access to the source document can understand it.
+    #     - Must contain all key facts needed to evaluate a RAG answer (dates, percentages, names, conditions).
+    #     - NEVER copy raw codes or table text from the context (e.g. '14, 3 = ...' or 'ASI Natura 103000361').
+    #     - NEVER use 'yes', 'no', or single words as the answer.
+    #     - Always write in plain continuous prose. NEVER use bullet points, numbered lists or markdown.
+    #     - For Unanswerable questions: ground_truth must be exactly the string 'Unanswerable'.
+    #     - Good example: 'La asignatura se evalúa mediante dos prácticas grupales con peso del 30% cada una y un examen final del 40%.'
+    #     - Bad example: '14, 3 = Presentation of second assignment' or 'yes' or 'ASI Natura 103000361'
+    #     """),
+    #     ("human", "Context: {chunk_text}\nMetadata: {metadata}\nType requested: '{q_type}'")
+    # ])
+    
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are an academic evaluator for RAG systems. Your task is to generate high-quality QA pairs in Spanish.
+        ("system", """Eres un evaluador académico para sistemas RAG. Tu tarea es generar pares de pregunta-respuesta de alta calidad en español.
 
-        STRICT FORMAT RULES:
-        1. language: Always use 'es'.
-        2. generation_method: Always use 'llm_generated'.
-        3. answer: ALWAYS leave this field as an empty string "". Do NOT fill it.
-        4. contexts: ALWAYS leave this as an empty list []. Do NOT fill it.
+        REGLAS DE FORMATO ESTRICTAS:
+        1. language: Usar siempre 'es'.
+        2. generation_method: Usar siempre 'llm_generated'.
+        3. answer: Dejar SIEMPRE este campo como cadena vacía "". NO rellenarlo.
+        4. contexts: Dejar SIEMPRE este campo como lista vacía []. NO rellenarlo.
 
-        Taxonomy of question_type:
-        - factual: Single-hop fact explicitly stated in the text.
-        - summarization: Requires synthesizing or grouping multiple elements of information.
-        - multi_hop: Requires combining information from different parts of the document to infer the answer.
-        - Unanswerable: Question cannot be answered with the provided context.
-        - ambiguous: Vague query.
+        Taxonomía de question_type:
+        - factual: Hecho de un solo paso explícitamente indicado en el texto.
+        - summarization: Requiere sintetizar o agrupar múltiples elementos de información.
+        - multi_hop: Requiere combinar información de diferentes partes del documento para inferir la respuesta.
+        - ambiguous: Consulta vaga o imprecisa.
 
-        CRITICAL RULES FOR ground_truth:
-        - Write as a complete, self-contained answer in Spanish that fully addresses the question.
-        - The answer must be informative enough that someone without access to the source document can understand it.
-        - Must contain all key facts needed to evaluate a RAG answer (dates, percentages, names, conditions).
-        - NEVER copy raw codes or table text from the context (e.g. '14, 3 = ...' or 'ASI Natura 103000361').
-        - NEVER use 'yes', 'no', or single words as the answer.
-        - For Unanswerable questions: ground_truth must be exactly the string 'Unanswerable'.
-        - Good example: 'La asignatura se evalúa mediante dos prácticas grupales con peso del 30% cada una y un examen final del 40%.'
-        - Bad example: '14, 3 = Presentation of second assignment' or 'yes' or 'ASI Natura 103000361'
+        REGLAS CRÍTICAS PARA ground_truth:
+        - Escribe una respuesta COMPLETA y AUTOCONTENIDA en español que responda plenamente a la pregunta.
+        - La respuesta debe ser suficientemente informativa para que alguien sin acceso al documento fuente pueda entenderla.
+        - Debe contener todos los hechos clave necesarios para evaluar una respuesta RAG (fechas, porcentajes, nombres, condiciones).
+        - NUNCA copies códigos en bruto ni texto de tablas del contexto (p.ej. '14, 3 = ...' o 'ASI Natura 103000361').
+        - NUNCA uses 'sí', 'no' o palabras sueltas como respuesta.
+        - Escribe siempre en prosa continua. NUNCA uses bullet points, listas numeradas ni markdown.
+        - Buen ejemplo: 'La asignatura se evalúa mediante dos prácticas grupales con peso del 30% cada una y un examen final del 40%.'
+        - Mal ejemplo: '14, 3 = Presentation of second assignment' o 'sí' o 'ASI Natura 103000361'
         """),
-        ("human", "Context: {chunk_text}\nMetadata: {metadata}\nType requested: '{q_type}'")
+        ("human", "Contexto: {chunk_text}\nMetadatos: {metadata}\nTipo solicitado: '{q_type}'")
     ])
 
     generator = prompt | llm.with_structured_output(QAPair)
 
     #q_types = ["factual", "procedural", "comparative", "out_of_scope", "ambiguous"]
-    q_types = ["factual", "summarization", "multi_hop", "Unanswerable", "ambiguous"]
-    probabilities = [0.4, 0.2, 0.2, 0.1, 0.1]
+    q_types = ["factual", "summarization", "multi_hop", "ambiguous"]
+    probabilities = [0.5, 0.2, 0.2, 0.1]
 
     dataset = []
 
