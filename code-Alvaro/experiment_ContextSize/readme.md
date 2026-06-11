@@ -1,4 +1,4 @@
-# Experimento 2: Evaluación del tamaño óptomo de contexto en un sistema RAG
+# Experimento 2: Evaluación del tamaño óptimo de contexto en un sistema RAG
 
 Este experimento analiza el impacto del número de fragmentos recuperados por el sistema RAG sobre la calidad de las respuestas generadas.
 
